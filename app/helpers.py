@@ -2,17 +2,20 @@
 
 
 def read_only(fn):
-    """Decorator used to make a class function read_only.
+    """Decorator used to make a class function read only.
 
     Args:
-        fn: Class function used to return a read_only value.
+        fn: Class function used to return a read only value.
+
+    Raises:
+        TypeError if the function argument enounters a "set" operation.
 
     Returns:
-        Function that returns a read_only value.
+        Function that returns a read only value.
     """
 
     def fset(self, value):
-        raise TypeError
+        raise TypeError('This is a read only value!')
 
     def fget(self):
         return fn(self)
