@@ -3,19 +3,37 @@
 xyz
 """
 
+# TODO: Add multiple players, REST-like API, README, master test file
+# TODO: Remove Flask, make some functions here private and some public, reorg tests/app
+
+
+import copy
 from .helpers import read_only
 
 
 class BowlingGame(object):
-    """TODO"""
+    """Manage bowling game scores and state.
+
+    The game state consists of a linked list implemented using dictionary objects all enclosed
+    within an outer list. This structure has two advantages: (1) Retrieve data from any desired
+    frame in O(1) time, and (2) Use linked objects for extra clarity when calculating the
+    forward score for special game outcomes including spare balls and strike balls.
+
+    Example:
+        state = [
+            {'ball_1_score': 4, 'ball_2_score': 6, 'is_spare': True, 'is_strike': False,
+                'next_frame': <object reference>, 'frame_score': 20, 'running_total': 20},
+            {'ball_1_score': 10, 'ball_2_score': 0, 'is_spare': False, 'is_strike': True,
+                'next_frame': <object reference>, 'frame_score': 13, 'running_total': 33},
+            {'ball_1_score': 1, 'ball_2_score': 2, 'is_spare': False, 'is_strike': True,
+                'next_frame': <object reference>, 'frame_score': 3, 'running_total': 36},
+            {'ball_1_score': 2, 'is_spare': False, 'is_strike': False, 'running_total': 36}
+        ]
+    """
+
 
     def __init__(self, num_pins=10, num_frames=10, game_state=[]):
         """Configure the bowling game.
-
-        The game state consists of a linked list implemented using dictionary objects all enclosed
-        within an outer list. This structure has two advantages: (1) Retrieve data from any desired
-        frame in O(1) time, and (2) Use linked objects for extra clarity when calculating the
-        forward score for special game outcomes including spare balls and strike balls.
 
         Args:
             num_pins: Integer representing the number of pins set up in each frame.
@@ -29,47 +47,149 @@ class BowlingGame(object):
 
     @read_only
     def NUM_PINS(self):
+        """Returns the total number of frame pins in this bowling game."""
         return self.__num_pins
 
 
     @read_only
     def NUM_FRAMES(self):
+        """Returns the total number of frames in this bowling game."""
         return self.__num_frames
 
 
     @read_only
     def current_frame(self):
-        return len(self.__game_state)
+        """Returns the current frame, always between 0 and <NUM_FRAMES>."""
+        game_len = len(self.__game_state) ## Zero indicates the game has not started.
+        return game_len if game_len <= self.NUM_FRAMES else self.NUM_FRAMES
 
 
-    # TODO
-    # add_ball_score =>
-    #     is_complete_frame ? store_frames(link_frames(frame, build_frame())) : build_frame
+    def get_game_state(self):
+        """Returns a full, recursive copy of the game state.
 
-    # TODO: Calculate running score, get scores from a particular frame (no > 10)
+        Returns:
+            List of dictionary objects representing the state of each frame.
+        """
+        return copy.deepcopy(self.__game_state)
 
-    # TODO: Add multiple players, REST-like API, README, master test file
 
-    def add_ball_score(self, frame, score):
-        """TODO"""
+    def get_frame_data(self, i):
+        """Get a shallow copy of basic frame data associated with the ith frame.
+
+        Args:
+            i: Integer representing the desired frame number.
+
+        Returns:
+            Dictionary containing data from the ith frame without the next frame link.
+        """
+        # Return an empty dictionary for invalid frame requests.
+        if i <= 0 or i > self.current_frame:
+            return {}
+
+        # Create a shallow copy of the frame to avoid recursively copying the linked objects.
+        frame = copy.copy(self.__game_state[i-1])
+        if 'next_frame' in frame:
+            del frame['next_frame']
+
+        # Return the basic frame data.
+        return frame
+
+
+    def post_new_score(self, score):
+        """Add a new ball score, update frame scores, then update the running total scores.
+
+        Args:
+            score: Integer representing the number of pins knocked down between [0, NUM_PINS].
+
+        Raises:
+            ValueError if the score is less than or greater than the number of pins in a frame.
+        """
+        self.add_ball_score(score)
+        self.calculate_frame_scores()
+        self.calculate_running_total()
+
+
+    def add_ball_score(self, score):
+        """Add a new ball score to the game and link frame objects when appropriate.
+
+        Args:
+            score: Integer representing the number of pins knocked down between [0, NUM_PINS].
+
+        Raises:
+            ValueError if the score is less than or greater than the number of pins in a frame.
+        """
+        # Ensure the score is valid.
+        if score is None or score < 0 or score > self.NUM_PINS:
+            raise ValueError('The score should be an integer between 0 and {num}!'
+                .format(num=repr(self.NUM_PINS)))
+
+        # Only proceed if this game is still in progress.
         if self.is_game_over():
-            pass
-        elif self.is_complete_frame(frame):
-            frame_2 = self.build_frame(score)
-            self.link_frames(frame, frame_2)
+            return
+
+        game = self.__game_state
+        game_len = len(game)
+        frame_prev = frame = frame_next = {}
+
+        # This is the first ball in the game.
+        if game_len == 0:
+            game.append(self.build_frame(score))
+            return
+
+        # This may be frame 1, so a previous frame may not exist.
+        if game_len == 1:
+            frame = game[0]
+            if self.is_incomplete_frame(frame):
+                game[0] = self.build_frame(frame.get('ball_1_score', 0), score)
+            else:
+                frame_next = self.build_frame(score)
+                self.link_frames(frame, frame_next)
+                game.append(frame_next)
+            return
+
+        # This is frame 2+, so link the previous frame then append the new score.
+        frame_prev = game[-2]
+        frame = game[-1]
+
+        if self.is_incomplete_frame(frame):
+            frame = self.build_frame(frame.get('ball_1_score', 0), score)
+            self.link_frames(frame_prev, frame)
+            game[-1] = frame
+
         else:
-            ball_1_score = frame.get('ball_1_score', -1)
-            ball_2_score = frame.get('ball_2_score', -1)
-            self.build_frame(ball_1_score, ball_2_score)
+            frame_next = self.build_frame(score)
+            self.link_frames(frame, frame_next)
+            game.append(frame_next)
+
+
+    def calculate_running_total(self):
+        """Mutate up to <NUM_FRAMES> fame objects to add the <running_total> key-value.
+        """
+        for i in range(len(self.__game_state)):
+            frame_prev = self.__game_state[i-1] or {}
+            running_total_prev = frame_prev.get('running_total', 0)
+
+            frame = self.__game_state[i]
+            frame_score = frame.get('frame_score', 0)
+
+            frame.update(running_total=running_total_prev + frame_score)
+
+
+    def calculate_frame_scores(self):
+        """Mutate up to three frame objects from the game state to add the <frame_score> key-value.
+        """
+        for i in range(3):
+            self.calculate_forward_score(self.current_frame + i)
 
 
     def calculate_forward_score(self, i):
-        """Mutate a frame object from the game state to add a calculated frame score.
+        """Mutate a frame object from the game state to add a calculated <frame_score> key-value.
 
         Given a frame i, calculate the frame score starting up to two frames back in order to
-        incorporate special scoring rules for spares and strikes. If the current game state
-        is empty, do nothing. If there are not enough frames to calculate a spare or a strike
-        and one exists in the calculated frame, do nothing.
+        incorporate special scoring rules for spares and strikes. Adds the 'frame_score' key upon
+        a successful frame calculation. If the current game state is empty, do nothing. If there
+        are not enough frames to calculate a spare or a strike and one exists in the calculated
+        frame, do nothing.
 
         Args:
             i: Integer representing the one-indexed frame from which to calculate the frame score.
@@ -122,21 +242,27 @@ class BowlingGame(object):
             ball_2_score: Integer representing the number of pins knocked down on the second ball.
 
         Raises:
-            ValueError if the total score is greater than the number of pins in a frame.
+            ValueError if a ball score is less than 0 or greater than <NUM_PINS>.
+            ValueError if the total score is greater than <NUM_PINS>.
             ValueError if there is a ball_2_score with no ball_1_score.
 
         Returns:
             Dictionary containing the data that describes this frame. Example:
             {'ball_1_score': 4, 'ball_2_score': 6, 'is_spare': True, 'is_strike': False}
         """
-        # The total score should be less than the number of pins.
-        if ball_1_score and ball_2_score and ball_1_score + ball_2_score > self.NUM_PINS:
+        # The score should be an appropriate number of pins.
+        if (ball_1_score and (ball_1_score < 0 or ball_1_score > self.NUM_PINS)) or \
+            (ball_2_score and (ball_2_score < 0 or ball_2_score > self.NUM_PINS)):
+            raise ValueError('The ball score should between 0 and {num} pins!' \
+                .format(num=repr(self.NUM_PINS)))
+
+        elif (ball_1_score and ball_2_score) and (ball_1_score + ball_2_score > self.NUM_PINS):
             raise ValueError('The total frame score should be no more than {num} pins!' \
                 .format(num=repr(self.NUM_PINS)))
 
         # The ball_2_score should only be given when there is a ball_1_score.
         elif ball_1_score is None and ball_2_score is not None:
-            raise ValueError('The total frame score should be no more than {num} pins!' \
+            raise ValueError('The ball frame score should between 0 and {num} pins!' \
                 .format(num=repr(self.NUM_PINS)))
 
         # Construct the frame dictionary object.
@@ -147,6 +273,7 @@ class BowlingGame(object):
         if ball_1_score:
             is_strike = ball_1_score == self.NUM_PINS
             frame.update(ball_1_score=ball_1_score)
+            if is_strike: frame.update(ball_2_score=0)
 
         if ball_2_score:
             is_spare = ball_1_score < self.NUM_PINS and ball_1_score + ball_2_score == self.NUM_PINS
@@ -174,50 +301,55 @@ class BowlingGame(object):
         """Determine whether this frame has a remaining ball.
 
         Args:
-            frame: Dictionary containing frame data; see <BowlingGame#build_frame>.
+            frame: Dictionary containing frame data with ball_1_score and ball_2_score keys.
 
         Returns:
-            Boolean value indicating whether the frame should continue.
+            Boolean value indicating whether the frame is incomplete.
         """
-        if frame.get('ball_1_score') is None or frame.get('ball_2_score') is None:
+        ball_1_score = frame.get('ball_1_score')
+        ball_2_score = frame.get('ball_2_score')
+
+        # A ball has not been recorded and/or this is not a strike.
+        if ball_1_score is None or (ball_1_score < self.NUM_PINS and ball_2_score is None):
             return True
+
         return False
 
 
-    def is_game_over(self, _game_state=[]):
+    def is_game_over(self):
         """Determine whether the game is over.
-
-        Args:
-            _game_state: Private list data used to override game state and test this function.
 
         Returns:
             Boolean value representing whether the game should continue.
         """
-        # Create easy references to the appropriate data.
-        _game_state = _game_state or self.__game_state
-        frame = _game_state[-1]
-        prev_frame = _game_state[-2]
-        frame_count = len(_game_state)
+        game = self.__game_state
 
-        # Test the game state status.
-        if frame_count < self.NUM_FRAMES:
+        if len(game) < self.NUM_FRAMES:
             return False ## The game is not in the last frame.
 
-        elif frame_count == self.NUM_FRAMES and self.is_incomplete_frame(frame):
+        prev_frame = game[-2]
+        frame = game[-1]
+        frame_count = len(game)
+
+        # Test the game status at the last frame and beyond.
+        if frame_count == self.NUM_FRAMES and self.is_incomplete_frame(frame):
             return False ## The last frame is incomplete.
 
-        elif frame_count == self.NUM_FRAMES and \
-            (frame.get('is_spare', False) or frame.get('is_strike', False)):
-                return False ## The tenth frame gets bonus ball(s).
+        # The last frame gets bonus ball(s).
+        elif frame_count == self.NUM_FRAMES and (frame.get('is_spare') or frame.get('is_strike')):
+            return False
 
-        elif frame_count == self.NUM_FRAMES + 1:
-            if prev_frame.get('is_spare', False) and frame.get('ball_1_score', -1) < 0:
-                return False ## There is one final spare ball.
-            elif prev_frame.get('is_strike', False) and frame.get('ball_2_score', -1) < 0:
-                return False ## There is another strike ball.
+        # There is another bonus ball.
+        elif frame_count == self.NUM_FRAMES + 1 and \
+            ((prev_frame.get('is_spare') and frame.get('ball_1_score') is None) or \
+            (prev_frame.get('is_strike') and frame.get('ball_2_score') is None) or \
+            frame.get('is_strike')):
+            return False
 
-        elif frame_count == self.NUM_FRAMES + 2 and frame.get('ball_1_score', -1) < 0:
-            return False ## There is one final strike ball.
+        # There is one final strike ball.
+        elif frame_count == self.NUM_FRAMES + 2 and \
+            (prev_frame.get('is_strike') and frame.get('ball_1_score') is None):
+            return False
 
         return True
 
