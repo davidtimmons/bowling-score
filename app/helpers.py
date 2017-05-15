@@ -1,4 +1,7 @@
-"""This module contains general helper functions for use with other modules."""
+"""helpers.py
+
+Provides general helper functions for use with other modules.
+"""
 
 
 def read_only(fn):

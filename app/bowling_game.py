@@ -1,11 +1,8 @@
 """bowling_game.py
 
-xyz
+Provides a low-level class used to manage bowling game state. Do not use this directly for
+managing a bowling scoring service. Instead, use the <bowling_controller.py> module.
 """
-
-# TODO: Add multiple players, REST-like API, README, master test file, module description
-# TODO: Duplicate example test through controller test file
-
 
 import copy
 from .helpers import read_only
@@ -70,11 +67,6 @@ class BowlingGame(object):
 
     def add_ball_score(self, score):
         """Add a new ball score to the game and link frame objects when appropriate.
-
-        Raises:
-            ValueError if a ball score is less than 0 or greater than <NUM_PINS>.
-            ValueError if the total score is greater than <NUM_PINS>.
-            ValueError if there is a ball_2_score with no ball_1_score.
 
         Args:
             score: Integer representing the number of pins knocked down.
