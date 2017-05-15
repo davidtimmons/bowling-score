@@ -3,8 +3,8 @@
 xyz
 """
 
-# TODO: Add multiple players, REST-like API, README, master test file
-# TODO: Remove Flask, update __init__.py
+# TODO: Add multiple players, REST-like API, README, master test file, module description
+# TODO: Duplicate example test through controller test file
 
 
 import copy

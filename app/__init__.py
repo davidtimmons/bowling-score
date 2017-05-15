@@ -1,3 +1,3 @@
 """app.__init__"""
 
-__all__ = ['app', 'bowling_game', 'helpers']
+__all__ = ['bowling_controller', 'bowling_game', 'helpers']
