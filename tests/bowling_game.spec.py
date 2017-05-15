@@ -20,16 +20,6 @@ class BowlingGameTestCase(unittest.TestCase):
         self.b = None
 
 
-    def test_get_game_state(self):
-        """It should return a deep copy of the game state."""
-        game_state = [{'a': 1, 'b': 2}, {'c': 3, 'd': 4}]
-        b2 = BowlingGame(game_state=game_state)
-        inner_state = b2.get_game_state()
-        self.assertEqual(inner_state, game_state)
-        game_state[0]['a'] = 5
-        self.assertNotEqual(inner_state, game_state)
-
-
     def test_current_frame(self):
         """It should return a value between 0 and NUM_FRAMES."""
         # Zero frames.
@@ -41,20 +31,58 @@ class BowlingGameTestCase(unittest.TestCase):
             game_state.append({})
 
 
-    def test_get_frame_data(self):
-        """It should return frame data without the object link."""
+    def test_add_ball_score_start(self):
+        """It should create a new frame if this is a new game."""
+        self.b.add_ball_score(5)
+        game = self.b.get_game_state()
+        self.assertEqual(len(game), 1)
+
+
+    def test_add_ball_score_frame_1_complete(self):
+        """It should complete the first frame."""
+        game_state = [{'ball_1_score': 1}]
+        b2 = BowlingGame(game_state=game_state)
+        b2.add_ball_score(5)
+        game = b2.get_game_state()
+        self.assertEqual(len(game), 1)
+
+
+    def test_add_ball_score_frame_1_add(self):
+        """It should add the second frame."""
+        game_state = [{'ball_1_score': 1, 'ball_2_score': 1}]
+        b2 = BowlingGame(game_state=game_state)
+        b2.add_ball_score(5)
+        game = b2.get_game_state()
+        self.assertEqual(len(game), 2)
+        self.assertEqual(game[0]['next_frame'], game[1])
+
+
+    def test_add_ball_score_frame_n_complete(self):
+        """It should complete the nth frame."""
         game_state = [
-            {'ball_1_score': 0, 'ball_2_score': 1, 'next_frame': True},
-            {'ball_1_score': 2, 'is_spare': False},
+            {'ball_1_score': 1, 'ball_2_score': 2},
+            {'ball_1_score': 3, 'ball_2_score': 4},
+            {'ball_1_score': 5},
         ]
         b2 = BowlingGame(game_state=game_state)
-        frame_1 = b2.get_frame_data(1)
-        frame_2 = b2.get_frame_data(2)
-        self.assertEqual(frame_1, {'ball_1_score': 0, 'ball_2_score': 1})
-        self.assertEqual(frame_2, game_state[1])
-        self.assertEqual(game_state[0]['next_frame'], True)
-        self.assertEqual(b2.get_frame_data(-1), {})
-        self.assertEqual(b2.get_frame_data(20), {})
+        b2.add_ball_score(5)
+        game = b2.get_game_state()
+        self.assertEqual(len(game), 3)
+        self.assertEqual(game[1]['next_frame'], game[2])
+
+
+    def test_add_ball_score_frame_n_add(self):
+        """It should add the nth frame."""
+        game_state = [
+            {'ball_1_score': 1, 'ball_2_score': 2},
+            {'ball_1_score': 3, 'ball_2_score': 4},
+            {'ball_1_score': 5, 'ball_2_score': 6},
+        ]
+        b2 = BowlingGame(game_state=game_state)
+        b2.add_ball_score(5)
+        game = b2.get_game_state()
+        self.assertEqual(len(game), 4)
+        self.assertEqual(game[2]['next_frame'], game[3])
 
 
     def test_build_frame_dict(self):
@@ -100,14 +128,6 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertIsInstance(self.b.build_frame(0, self.b.NUM_PINS), dict)
 
 
-    def test_link_frames(self):
-        """It should link two frames together using an object reference."""
-        frame_1 = self.b.build_frame(1, 1)
-        frame_2 = self.b.build_frame(2, 2)
-        frame_1 = self.b.link_frames(frame_1, frame_2)
-        self.assertEqual(frame_1.get('next_frame', None), frame_2)
-
-
     def test_calculate_forward_score_no_game(self):
         """It should do nothing if the game state is empty."""
         game_state = []
@@ -116,8 +136,8 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(b2.current_frame, 0)
 
 
-    def test_calculate_forward_score_n_frames(self):
-        """It should calculate a frame score if there are one or more frames."""
+    def test_calculate_forward_score_frame_1(self):
+        """It should calculate a frame score if there is one frame."""
         # One frame.
         game_state = []
         game_state.append(self.b.build_frame(1, 0))
@@ -125,7 +145,9 @@ class BowlingGameTestCase(unittest.TestCase):
         b2.calculate_forward_score(b2.current_frame)
         self.assertEqual(game_state[0]['frame_score'], 1)
 
-        # Two frames.
+
+    def test_calculate_forward_score_frame_2(self):
+        """It should calculate a frame score if there are two frames."""
         game_state = []
         game_state.append(self.b.build_frame(1, 0))
         game_state.append(self.b.build_frame(0, 2))
@@ -134,7 +156,9 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(game_state[0].get('frame_score'), 1)
         self.assertEqual(game_state[1].get('frame_score'), None)
 
-        # Three frames.
+
+    def test_calculate_forward_score_frame_3(self):
+        """It should calculate a frame score if there are three frames."""
         game_state = []
         game_state.append(self.b.build_frame(1, 0))
         game_state.append(self.b.build_frame(0, 2))
@@ -145,7 +169,9 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(game_state[1].get('frame_score'), None)
         self.assertEqual(game_state[2].get('frame_score'), None)
 
-        # Four frames.
+
+    def test_calculate_forward_score_frame_4(self):
+        """It should calculate a frame score if there are four frames."""
         game_state = []
         game_state.append(self.b.build_frame(1, 0))
         game_state.append(self.b.build_frame(0, 2))
@@ -216,8 +242,8 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(game_state[0].get('frame_score'), None)
 
 
-    def test_calculate_frame_scores(self):
-        """It should calculate up to three frame scores."""
+    def test_calculate_frame_scores_open(self):
+        """It should calculate up to three open frame scores."""
         # Open frames.
         game_state = [
             {'ball_1_score': 10},
@@ -234,7 +260,9 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(game_state[2].get('frame_score'), 2)
         self.assertEqual(game_state[3].get('frame_score'), 3)
 
-        # Spares.
+
+    def test_calculate_frame_scores_spare(self):
+        """It should calculate up to three frame scores when at least one is a spare."""
         game_state = [
             {'ball_1_score': 0, 'ball_2_score': 1},
             {'ball_1_score': 5, 'ball_2_score': 5, 'is_spare': True},
@@ -248,7 +276,9 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(game_state[1].get('frame_score'), 13)
         self.assertEqual(game_state[2].get('frame_score'), 7)
 
-        # Strikes.
+
+    def test_calculate_frame_scores_strike(self):
+        """It should calculate up to three frame scores when at least one is a strike."""
         game_state = [
             {'ball_1_score': 10, 'is_strike': True},
             {'ball_1_score': 10, 'is_strike': True},
@@ -284,78 +314,16 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertEqual(len(game_state), 5)
 
 
-    def test_add_ball_score_start(self):
-        """It should create a new frame if this is a new game."""
-        self.b.add_ball_score(5)
-        game = self.b.get_game_state()
-        self.assertEqual(len(game), 1)
-
-
-    def test_add_ball_score_frame_1(self):
-        """It should complete the first frame or add a new frame."""
-        # Complete the frame.
-        game_state = [{'ball_1_score': 1}]
-        b2 = BowlingGame(game_state=game_state)
-        b2.add_ball_score(5)
-        game = b2.get_game_state()
-        self.assertEqual(len(game), 1)
-
-        # Add the second frame.
-        game_state = [{'ball_1_score': 1, 'ball_2_score': 1}]
-        b2 = BowlingGame(game_state=game_state)
-        b2.add_ball_score(5)
-        game = b2.get_game_state()
-        self.assertEqual(len(game), 2)
-        self.assertEqual(game[0]['next_frame'], game[1])
-
-
-    def test_add_ball_score_frame_n(self):
-        """It should complete the nth frame or add a new frame."""
-        # Complete the nth frame.
-        game_state = [
-            {'ball_1_score': 1, 'ball_2_score': 2},
-            {'ball_1_score': 3, 'ball_2_score': 4},
-            {'ball_1_score': 5},
-        ]
-        b2 = BowlingGame(game_state=game_state)
-        b2.add_ball_score(5)
-        game = b2.get_game_state()
-        self.assertEqual(len(game), 3)
-        self.assertEqual(game[1]['next_frame'], game[2])
-
-        # Add the nth frame.
-        game_state = [
-            {'ball_1_score': 1, 'ball_2_score': 2},
-            {'ball_1_score': 3, 'ball_2_score': 4},
-            {'ball_1_score': 5, 'ball_2_score': 6},
-        ]
-        b2 = BowlingGame(game_state=game_state)
-        b2.add_ball_score(5)
-        game = b2.get_game_state()
-        self.assertEqual(len(game), 4)
-        self.assertEqual(game[2]['next_frame'], game[3])
-
-
-    def test_post_new_score(self):
-        """It should add a ball score, update frame scores, and update running total scores."""
-        for i in range(10):
-            self.b.post_new_score(1)
-        game = self.b.get_game_state()
-        self.assertEqual(len(game), 5)
-        self.assertEqual(game[1].get('frame_score'), 2)
-        self.assertEqual(game[-1].get('running_total'), 10)
-
-
-    def test_is_incomplete_frame(self):
+    def test_is_frame_incomplete(self):
         """It should indicate whether the frame is finished."""
         frame_1 = self.b.build_frame()
         frame_2 = self.b.build_frame(1)
         frame_3 = self.b.build_frame(1, 9)
         frame_4 = self.b.build_frame(10)
-        self.assertTrue(self.b.is_incomplete_frame(frame_1))
-        self.assertTrue(self.b.is_incomplete_frame(frame_2))
-        self.assertFalse(self.b.is_incomplete_frame(frame_3))
-        self.assertFalse(self.b.is_incomplete_frame(frame_4))
+        self.assertTrue(self.b.is_frame_incomplete(frame_1))
+        self.assertTrue(self.b.is_frame_incomplete(frame_2))
+        self.assertFalse(self.b.is_frame_incomplete(frame_3))
+        self.assertFalse(self.b.is_frame_incomplete(frame_4))
 
 
     def test_is_game_over(self):
@@ -420,6 +388,49 @@ class BowlingGameTestCase(unittest.TestCase):
         game_state.append(self.b.build_frame(1, 1))
         b2 = BowlingGame(game_state=game_state)
         self.assertTrue(b2.is_game_over())
+
+
+    def test_link_frames(self):
+        """It should link two frames together using an object reference."""
+        frame_1 = self.b.build_frame(1, 1)
+        frame_2 = self.b.build_frame(2, 2)
+        frame_1 = self.b.link_frames(frame_1, frame_2)
+        self.assertEqual(frame_1.get('next_frame', None), frame_2)
+
+
+    def test_get_frame_data(self):
+        """It should return frame data without the object link."""
+        game_state = [
+            {'ball_1_score': 0, 'ball_2_score': 1, 'next_frame': True},
+            {'ball_1_score': 2, 'is_spare': False},
+        ]
+        b2 = BowlingGame(game_state=game_state)
+        frame_1 = b2.get_frame_data(1)
+        frame_2 = b2.get_frame_data(2)
+        self.assertEqual(frame_1, {'ball_1_score': 0, 'ball_2_score': 1})
+        self.assertEqual(frame_2, game_state[1])
+        self.assertEqual(game_state[0]['next_frame'], True)
+        self.assertEqual(b2.get_frame_data(-1), {})
+        self.assertEqual(b2.get_frame_data(20), {})
+
+    def test_get_game_state(self):
+        """It should return a deep copy of the game state."""
+        game_state = [{'a': 1, 'b': 2}, {'c': 3, 'd': 4}]
+        b2 = BowlingGame(game_state=game_state)
+        inner_state = b2.get_game_state()
+        self.assertEqual(inner_state, game_state)
+        game_state[0]['a'] = 5
+        self.assertNotEqual(inner_state, game_state)
+
+
+    def test_post_new_score(self):
+        """It should add a ball score, update frame scores, and update running total scores."""
+        for i in range(10):
+            self.b.post_new_score(1)
+        game = self.b.get_game_state()
+        self.assertEqual(len(game), 5)
+        self.assertEqual(game[1].get('frame_score'), 2)
+        self.assertEqual(game[-1].get('running_total'), 10)
 
 
 if __name__ == '__main__':
