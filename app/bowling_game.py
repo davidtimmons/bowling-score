@@ -5,7 +5,7 @@ managing a bowling scoring service. Instead, use the <bowling_controller.py> mod
 """
 
 import copy
-from .helpers import read_only
+from .helpers import read_only, restrict_bounds
 
 
 class BowlingGame(object):
@@ -337,20 +337,13 @@ class BowlingGame(object):
         return copy.deepcopy(self.__game_state)
 
 
+    @restrict_bounds(0, lambda self: self.__num_pins)
     def post_new_score(self, score):
         """Add a new ball score, update frame scores, then update the running total scores.
 
         Args:
             score: Integer representing the number of pins knocked down between [0, NUM_PINS].
-
-        Raises:
-            ValueError if the score is less than or greater than the number of pins in a frame.
         """
-        # Ensure the score is valid.
-        if score is None or score < 0 or score > self.NUM_PINS:
-            raise ValueError('The score should be an integer between 0 and {num}!'
-                .format(num=repr(self.NUM_PINS)))
-
         self.add_ball_score(score)
         self.calculate_frame_scores()
         self.calculate_running_total()
