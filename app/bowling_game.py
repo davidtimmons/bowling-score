@@ -182,33 +182,30 @@ class BowlingGame(object):
         frame_next = frame_start.get('next_frame', {})
         frame_last = frame_next.get('next_frame', {})
 
-        # Only proceed if this frame does not have an existing frame score.
-        if not frame_start.get('frame_score'):
+        # Extract relevant data from the frame objects for clarity.
+        is_spare = frame_start.get('is_spare', False)
+        is_strike = frame_start.get('is_strike', False)
+        open_frame = not (is_spare or is_strike)
 
-            # Extract relevant data from the frame objects for clarity.
-            is_spare = frame_start.get('is_spare', False)
-            is_strike = frame_start.get('is_strike', False)
-            open_frame = not (is_spare or is_strike)
+        ball_1_score = frame_start.get('ball_1_score', 0)
+        ball_2_score = frame_start.get('ball_2_score', 0)
+        ball_3_score = frame_next.get('ball_1_score', 0)
+        ball_4_score = frame_next.get('ball_2_score', 0)
+        ball_5_score = frame_last.get('ball_1_score', 0)
 
-            ball_1_score = frame_start.get('ball_1_score', 0)
-            ball_2_score = frame_start.get('ball_2_score', 0)
-            ball_3_score = frame_next.get('ball_1_score', 0)
-            ball_4_score = frame_next.get('ball_2_score', 0)
-            ball_5_score = frame_last.get('ball_1_score', 0)
+        score = ball_1_score + ball_2_score
+        score_next = ball_3_score + ball_4_score
 
-            score = ball_1_score + ball_2_score
-            score_next = ball_3_score + ball_4_score
-
-            # Calculate the frame score for one of these frames: i=1, i=2, i=i-2.
-            if open_frame:
-                frame_start.update(frame_score=score)
-            elif is_spare and frame_next:
-                frame_start.update(frame_score=score + ball_3_score)
-            elif is_strike and frame_next:
-                if frame_next.get('is_strike') and frame_last:
-                    frame_start.update(frame_score=score + score_next + ball_5_score)
-                else:
-                    frame_start.update(frame_score=score + score_next)
+        # Calculate the frame score for one of these frames: i=1, i=2, i=i-2.
+        if open_frame:
+            frame_start.update(frame_score=score)
+        elif is_spare and frame_next:
+            frame_start.update(frame_score=score + ball_3_score)
+        elif is_strike and frame_next:
+            if frame_next.get('is_strike') and frame_last:
+                frame_start.update(frame_score=score + score_next + ball_5_score)
+            else:
+                frame_start.update(frame_score=score + score_next)
 
 
     def calculate_frame_scores(self):
@@ -248,44 +245,6 @@ class BowlingGame(object):
             return True
 
         return False
-
-
-    def is_game_over(self):
-        """Determine whether the game is over.
-
-        Returns:
-            Boolean value representing whether the game should continue.
-        """
-        game = self.__game_state
-
-        if len(game) < self.NUM_FRAMES:
-            return False ## The game is not in the last frame.
-
-        prev_frame = game[-2]
-        frame = game[-1]
-        frame_count = len(game)
-
-        # Test the game status at the last frame and beyond.
-        if frame_count == self.NUM_FRAMES and self.is_frame_incomplete(frame):
-            return False ## The last frame is incomplete.
-
-        # The last frame gets bonus ball(s).
-        elif frame_count == self.NUM_FRAMES and (frame.get('is_spare') or frame.get('is_strike')):
-            return False
-
-        # There is another bonus ball.
-        elif frame_count == self.NUM_FRAMES + 1 and \
-            ((prev_frame.get('is_spare') and frame.get('ball_1_score') is None) or \
-            (prev_frame.get('is_strike') and frame.get('ball_2_score') is None) or \
-            frame.get('is_strike')):
-            return False
-
-        # There is one final strike ball.
-        elif frame_count == self.NUM_FRAMES + 2 and \
-            (prev_frame.get('is_strike') and frame.get('ball_1_score') is None):
-            return False
-
-        return True
 
 
     def link_frames(self, frame_1, frame_2=None):
@@ -335,6 +294,53 @@ class BowlingGame(object):
             List of dictionary objects representing the state of each frame.
         """
         return copy.deepcopy(self.__game_state)
+
+
+    def is_current_frame_complete(self):
+        """Determine whether the current frame has ended.
+
+        Returns:
+            Boolean value representing whether the frame has ended.
+        """
+        return not self.is_frame_incomplete(self.get_frame_data(self.current_frame))
+
+
+    def is_game_over(self):
+        """Determine whether the game is over.
+
+        Returns:
+            Boolean value representing whether the game should continue.
+        """
+        game = self.__game_state
+
+        if len(game) < self.NUM_FRAMES:
+            return False ## The game is not in the last frame.
+
+        prev_frame = game[-2]
+        frame = game[-1]
+        frame_count = len(game)
+
+        # Test the game status at the last frame and beyond.
+        if frame_count == self.NUM_FRAMES and self.is_frame_incomplete(frame):
+            return False ## The last frame is incomplete.
+
+        # The last frame gets bonus ball(s).
+        elif frame_count == self.NUM_FRAMES and (frame.get('is_spare') or frame.get('is_strike')):
+            return False
+
+        # There is another bonus ball.
+        elif frame_count == self.NUM_FRAMES + 1 and \
+            ((prev_frame.get('is_spare') and frame.get('ball_1_score') is None) or \
+            (prev_frame.get('is_strike') and frame.get('ball_2_score') is None) or \
+            frame.get('is_strike')):
+            return False
+
+        # There is one final strike ball.
+        elif frame_count == self.NUM_FRAMES + 2 and \
+            (prev_frame.get('is_strike') and frame.get('ball_1_score') is None):
+            return False
+
+        return True
 
 
     @restrict_bounds(0, lambda self: self.__num_pins)

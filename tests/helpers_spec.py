@@ -12,17 +12,10 @@ class HelpersTestCase(unittest.TestCase):
 
     def setUp(self):
         """Instantiate basic test object."""
-
         class TestClass(object):
             @read_only
             def MY_CONST(self): return 42
-
         self.t = TestClass()
-
-
-    def tearDown(self):
-        """Destroy test object."""
-        self.t = None
 
 
     def test_read_only_get(self):
@@ -78,10 +71,24 @@ class HelpersTestCase(unittest.TestCase):
         t2 = TestClass2()
         def cause_error_1(): t2.fn(0)
         def cause_error_2(): t2.fn(6)
+        self.assertRaises(ValueError, cause_error_1)
+        self.assertRaises(ValueError, cause_error_2)
         self.assertEqual(t2.fn(1), 1)
         self.assertEqual(t2.fn(3), 3)
         self.assertEqual(t2.fn(5), 5)
 
-        
+
+    def test_restrict_bounds_function_arg(self):
+        """It should accept a function argument that returns a class instance number."""
+        class TestClass2(object):
+            def __init__(self): self.__test = 42
+            @restrict_bounds(1, lambda self: self.__test)
+            def fn(self, arg): return arg
+        t2 = TestClass2()
+        def cause_error(): t2.fn(43)
+        self.assertRaises(ValueError, cause_error)
+        self.assertEqual(t2.fn(42), 42)
+
+
 if __name__ == '__main__':
     unittest.main()
