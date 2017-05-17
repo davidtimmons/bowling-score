@@ -150,7 +150,7 @@ class BowlingGameTestCase(unittest.TestCase):
         """It should calculate a frame score if there are two frames."""
         game_state = []
         game_state.append(self.b.build_frame(1, 0))
-        game_state.append(self.b.build_frame(0, 2))
+        game_state.append(self.b.build_frame(0, 2)) ## Ignored.
         b2 = BowlingGame(game_state=game_state)
         b2.calculate_forward_score(b2.current_frame)
         self.assertEqual(game_state[0].get('frame_score'), 1)
@@ -161,8 +161,8 @@ class BowlingGameTestCase(unittest.TestCase):
         """It should calculate a frame score if there are three frames."""
         game_state = []
         game_state.append(self.b.build_frame(1, 0))
-        game_state.append(self.b.build_frame(0, 2))
-        game_state.append(self.b.build_frame(1, 2))
+        game_state.append(self.b.build_frame(0, 2)) ## Ignored.
+        game_state.append(self.b.build_frame(1, 2)) ## Ignored.
         b2 = BowlingGame(game_state=game_state)
         b2.calculate_forward_score(b2.current_frame)
         self.assertEqual(game_state[0].get('frame_score'), 1)
@@ -173,10 +173,10 @@ class BowlingGameTestCase(unittest.TestCase):
     def test_calculate_forward_score_frame_4(self):
         """It should calculate a frame score if there are four frames."""
         game_state = []
-        game_state.append(self.b.build_frame(1, 0))
+        game_state.append(self.b.build_frame(1, 0)) ## Ignored.
         game_state.append(self.b.build_frame(0, 2))
-        game_state.append(self.b.build_frame(1, 2))
-        game_state.append(self.b.build_frame(2, 2))
+        game_state.append(self.b.build_frame(1, 2)) ## Ignored.
+        game_state.append(self.b.build_frame(2, 2)) ## Ignored.
         b2 = BowlingGame(game_state=game_state)
         b2.calculate_forward_score(b2.current_frame)
         self.assertEqual(game_state[0].get('frame_score'), None)

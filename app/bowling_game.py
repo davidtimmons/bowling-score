@@ -22,7 +22,7 @@ class BowlingGame(object):
                 'next_frame': <object reference>, 'frame_score': 20, 'running_total': 20},
             {'ball_1_score': 10, 'ball_2_score': 0, 'is_spare': False, 'is_strike': True,
                 'next_frame': <object reference>, 'frame_score': 13, 'running_total': 33},
-            {'ball_1_score': 1, 'ball_2_score': 2, 'is_spare': False, 'is_strike': True,
+            {'ball_1_score': 1, 'ball_2_score': 2, 'is_spare': False, 'is_strike': False,
                 'next_frame': <object reference>, 'frame_score': 3, 'running_total': 36},
             {'ball_1_score': 2, 'is_spare': False, 'is_strike': False, 'running_total': 36}
         ]
@@ -126,32 +126,35 @@ class BowlingGame(object):
             Dictionary containing the data that describes this frame. Example:
             {'ball_1_score': 4, 'ball_2_score': 6, 'is_spare': True, 'is_strike': False}
         """
-        # The score should be an appropriate number of pins.
-        if (ball_1_score and (ball_1_score < 0 or ball_1_score > self.NUM_PINS)) or \
-            (ball_2_score and (ball_2_score < 0 or ball_2_score > self.NUM_PINS)):
-            raise ValueError('The ball score should between 0 and {num} pins!' \
+        # The score should represent an appropriate number of pins knocked down.
+        if ball_1_score is not None and (ball_1_score < 0 or ball_1_score > self.NUM_PINS):
+            raise ValueError('The ball 1 score should between 0 and {num} pins!' \
                 .format(num=repr(self.NUM_PINS)))
 
-        elif (ball_1_score and ball_2_score) and (ball_1_score + ball_2_score > self.NUM_PINS):
+        elif ball_2_score is not None and (ball_2_score < 0 or ball_2_score > self.NUM_PINS):
+            raise ValueError('The ball 2 score should between 0 and {num} pins!' \
+                .format(num=repr(self.NUM_PINS)))
+
+        elif ball_1_score is not None and ball_2_score is not None and \
+            ball_1_score + ball_2_score > self.NUM_PINS:
             raise ValueError('The total frame score should be no more than {num} pins!' \
                 .format(num=repr(self.NUM_PINS)))
 
         # The ball_2_score should only be given when there is a ball_1_score.
         elif ball_1_score is None and ball_2_score is not None:
-            raise ValueError('The ball frame score should between 0 and {num} pins!' \
-                .format(num=repr(self.NUM_PINS)))
+            raise ValueError('The ball 1 score should be given with the ball 2 score!')
 
         # Construct the frame dictionary object.
         frame = {}
         is_strike = False
         is_spare = False
 
-        if ball_1_score:
+        if ball_1_score is not None:
             is_strike = ball_1_score == self.NUM_PINS
             frame.update(ball_1_score=ball_1_score)
             if is_strike: frame.update(ball_2_score=0)
 
-        if ball_2_score:
+        if ball_2_score is not None:
             is_spare = ball_1_score < self.NUM_PINS and ball_1_score + ball_2_score == self.NUM_PINS
             frame.update(ball_2_score=ball_2_score)
 
@@ -178,11 +181,17 @@ class BowlingGame(object):
         # Ensure n does not calculate a non-existant frame.
         n = i - 1 ## Shift i to be zero-indexed so it pulls the correct value from the game state.
         n = 0 if n - 2 <= 0 else n - 2 ## Calculate the score for up to two frames behind.
+
+        # Get frame data and completion status.
         frame_start = self.__game_state[n] or {}
         frame_next = frame_start.get('next_frame', {})
         frame_last = frame_next.get('next_frame', {})
 
-        # Extract relevant data from the frame objects for clarity.
+        frame_is_complete = not self.is_frame_incomplete(frame_start)
+        frame_next_is_complete = not self.is_frame_incomplete(frame_next)
+        frame_last_is_complete = not self.is_frame_incomplete(frame_last)
+
+        # Get special balls and scores.
         is_spare = frame_start.get('is_spare', False)
         is_strike = frame_start.get('is_strike', False)
         open_frame = not (is_spare or is_strike)
@@ -196,16 +205,17 @@ class BowlingGame(object):
         score = ball_1_score + ball_2_score
         score_next = ball_3_score + ball_4_score
 
-        # Calculate the frame score for one of these frames: i=1, i=2, i=i-2.
-        if open_frame:
-            frame_start.update(frame_score=score)
-        elif is_spare and frame_next:
-            frame_start.update(frame_score=score + ball_3_score)
-        elif is_strike and frame_next:
-            if frame_next.get('is_strike') and frame_last:
-                frame_start.update(frame_score=score + score_next + ball_5_score)
-            else:
-                frame_start.update(frame_score=score + score_next)
+        # Calculate frame score for one of these frames: i=1, i=2, i=i-2.
+        if frame_is_complete:
+            if open_frame:
+                frame_start.update(frame_score=score)
+            elif is_spare and frame_next:
+                frame_start.update(frame_score=score + ball_3_score)
+            elif is_strike and frame_next_is_complete:
+                if frame_next.get('is_strike') and frame_last:
+                    frame_start.update(frame_score=score + score_next + ball_5_score)
+                elif not frame_next.get('is_strike'):
+                    frame_start.update(frame_score=score + score_next)
 
 
     def calculate_frame_scores(self):

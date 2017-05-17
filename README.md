@@ -7,6 +7,8 @@ _Bowling Score_ is a Python service that manages a bowling game for multiple pla
 The service takes in pins knocked down, tracks frame scores, and calculates a running total
 for each player. Scoring is based on the tutorial found at the _ThoughtCo. ["Bowling Scoring"](http://bowling.about.com/od/rulesofthegame/a/bowlingscoring.htm)_ article.
 
+Tested with Python 3.6.1.
+
 ## Features:
 
 + Configure the number of players in the game.

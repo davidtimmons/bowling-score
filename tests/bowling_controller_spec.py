@@ -96,26 +96,26 @@ class BowlingControllerTestCase(unittest.TestCase):
 
 
     def test_match_the_bowling_example(self):
-        """It should duplicate the example at the bowling scoring tutorial website."""
+        """It should duplicate the final scores in the bowling scoring tutorial example."""
         # URL: http://bowling.about.com/od/rulesofthegame/a/bowlingscoring.htm
         b = BowlingController(1, 10, 10, [])
-        b.post_new_score(10)
-        b.post_new_score(7)
-        b.post_new_score(3)
-        b.post_new_score(7)
-        b.post_new_score(2)
-        b.post_new_score(9)
-        b.post_new_score(1)
-        b.post_new_score(10)
-        b.post_new_score(10)
-        b.post_new_score(10)
-        b.post_new_score(2)
-        b.post_new_score(3)
-        b.post_new_score(6)
-        b.post_new_score(4)
-        b.post_new_score(7)
-        b.post_new_score(3)
-        b.post_new_score(3)
+        b.post_new_score(10) ## Frame 1, Ball 1-2
+        b.post_new_score(7) ## Frame 2, Ball 1
+        b.post_new_score(3) ## Frame 2, Ball 2
+        b.post_new_score(7) ## Frame 3, Ball 1
+        b.post_new_score(2) ## Frame 3, Ball 2
+        b.post_new_score(9) ## Frame 4, Ball 1
+        b.post_new_score(1) ## Frame 4, Ball 2
+        b.post_new_score(10) ## Frame 5, Ball 1-2
+        b.post_new_score(10) ## Frame 6, Ball 1-2
+        b.post_new_score(10) ## Frame 7, Ball 1-2
+        b.post_new_score(2) ## Frame 8, Ball 1
+        b.post_new_score(3) ## Frame 8, Ball 2
+        b.post_new_score(6) ## Frame 9, Ball 1
+        b.post_new_score(4) ## Frame 9, Ball 2
+        b.post_new_score(7) ## Frame 10, Ball 1
+        b.post_new_score(3) ## Frame 10, Ball 2
+        b.post_new_score(3) ## Frame 10, Ball 3
         frame_data = []
         for i in range(1, 11): frame_data.append(b.get_frame_data(i, 1))
         self.assertTrue(b.is_game_over(1))
@@ -139,6 +139,252 @@ class BowlingControllerTestCase(unittest.TestCase):
         self.assertEqual(frame_data[8].get('running_total'), 155)
         self.assertEqual(frame_data[9].get('frame_score'), 13)
         self.assertEqual(frame_data[9].get('running_total'), 168)
+
+
+    def test_match_the_bowling_example_running_frame_scores(self):
+        """It should duplicate the running frame scores in the bowling scoring tutorial example."""
+        # URL: http://bowling.about.com/od/rulesofthegame/a/bowlingscoring.htm
+        b = BowlingController(1, 10, 10, [])
+        b.post_new_score(10) ## Frame 1, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), None)
+        b.post_new_score(7) ## Frame 2, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), None)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), None)
+        b.post_new_score(3) ## Frame 2, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), None)
+        b.post_new_score(7) ## Frame 3, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        b.post_new_score(2) ## Frame 3, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        b.post_new_score(9) ## Frame 4, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), None)
+        b.post_new_score(1) ## Frame 4, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), None)
+        b.post_new_score(10) ## Frame 5, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), None)
+        b.post_new_score(10) ## Frame 6, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), None)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), None)
+        b.post_new_score(10) ## Frame 7, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), None)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), None)
+        b.post_new_score(2) ## Frame 8, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), None)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), None)
+        b.post_new_score(3) ## Frame 8, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), 15)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), 5)
+        b.post_new_score(6) ## Frame 9, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), 15)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), 5)
+        self.assertEqual(b.get_frame_data(9, 1).get('frame_score'), None)
+        b.post_new_score(4) ## Frame 9, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), 15)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), 5)
+        self.assertEqual(b.get_frame_data(9, 1).get('frame_score'), None)
+        b.post_new_score(7) ## Frame 10, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), 15)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), 5)
+        self.assertEqual(b.get_frame_data(9, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(10, 1).get('frame_score'), None)
+        b.post_new_score(3) ## Frame 10, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), 15)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), 5)
+        self.assertEqual(b.get_frame_data(9, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(10, 1).get('frame_score'), None)
+        b.post_new_score(3) ## Frame 10, Ball 3
+        self.assertEqual(b.get_frame_data(1, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(3, 1).get('frame_score'), 9)
+        self.assertEqual(b.get_frame_data(4, 1).get('frame_score'), 20)
+        self.assertEqual(b.get_frame_data(5, 1).get('frame_score'), 30)
+        self.assertEqual(b.get_frame_data(6, 1).get('frame_score'), 22)
+        self.assertEqual(b.get_frame_data(7, 1).get('frame_score'), 15)
+        self.assertEqual(b.get_frame_data(8, 1).get('frame_score'), 5)
+        self.assertEqual(b.get_frame_data(9, 1).get('frame_score'), 17)
+        self.assertEqual(b.get_frame_data(10, 1).get('frame_score'), 13)
+
+
+    def test_match_the_bowling_example_running_total_scores(self):
+        """It should duplicate the running total scores in the bowling scoring tutorial example."""
+        # URL: http://bowling.about.com/od/rulesofthegame/a/bowlingscoring.htm
+        b = BowlingController(1, 10, 10, [])
+        b.post_new_score(10) ## Frame 1, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 0)
+        b.post_new_score(7) ## Frame 2, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 0)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 0)
+        b.post_new_score(3) ## Frame 2, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 20)
+        b.post_new_score(7) ## Frame 3, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 37)
+        b.post_new_score(2) ## Frame 3, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        b.post_new_score(9) ## Frame 4, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 46)
+        b.post_new_score(1) ## Frame 4, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 46)
+        b.post_new_score(10) ## Frame 5, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 66)
+        b.post_new_score(10) ## Frame 6, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 66)
+        b.post_new_score(10) ## Frame 7, Ball 1-2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 96)
+        b.post_new_score(2) ## Frame 8, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 118)
+        b.post_new_score(3) ## Frame 8, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 133)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 138)
+        b.post_new_score(6) ## Frame 9, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 133)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 138)
+        self.assertEqual(b.get_frame_data(9, 1).get('running_total'), 138)
+        b.post_new_score(4) ## Frame 9, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 133)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 138)
+        self.assertEqual(b.get_frame_data(9, 1).get('running_total'), 138)
+        b.post_new_score(7) ## Frame 10, Ball 1
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 133)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 138)
+        self.assertEqual(b.get_frame_data(9, 1).get('running_total'), 155)
+        b.post_new_score(3) ## Frame 10, Ball 2
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 133)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 138)
+        self.assertEqual(b.get_frame_data(9, 1).get('running_total'), 155)
+        self.assertEqual(b.get_frame_data(10, 1).get('running_total'), 155)
+        b.post_new_score(3) ## Frame 10, Ball 3
+        self.assertEqual(b.get_frame_data(1, 1).get('running_total'), 20)
+        self.assertEqual(b.get_frame_data(2, 1).get('running_total'), 37)
+        self.assertEqual(b.get_frame_data(3, 1).get('running_total'), 46)
+        self.assertEqual(b.get_frame_data(4, 1).get('running_total'), 66)
+        self.assertEqual(b.get_frame_data(5, 1).get('running_total'), 96)
+        self.assertEqual(b.get_frame_data(6, 1).get('running_total'), 118)
+        self.assertEqual(b.get_frame_data(7, 1).get('running_total'), 133)
+        self.assertEqual(b.get_frame_data(8, 1).get('running_total'), 138)
+        self.assertEqual(b.get_frame_data(9, 1).get('running_total'), 155)
+        self.assertEqual(b.get_frame_data(10, 1).get('running_total'), 168)
 
 
 if __name__ == '__main__':
