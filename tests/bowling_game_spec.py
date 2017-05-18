@@ -285,7 +285,7 @@ class BowlingGameTestCase(unittest.TestCase):
 
 
     def test_calculate_running_total(self):
-        """It should calculate all possible running total scores."""
+        """It should calculate all running total scores from 2 frames back."""
         game_state = [
             {'frame_score': 10, 'is_strike': True},
             {'frame_score': 8},
@@ -295,13 +295,12 @@ class BowlingGameTestCase(unittest.TestCase):
         ]
         b2 = BowlingGame(game_state=game_state)
         b2.calculate_running_total()
-        self.assertEqual(game_state[0].get('running_total'), 10)
-        self.assertEqual(game_state[1].get('running_total'), 18)
-        self.assertEqual(game_state[2].get('running_total'), 21)
-        self.assertEqual(game_state[3].get('running_total'), 30)
-
+        self.assertEqual(game_state[0].get('running_total'), None)
+        self.assertEqual(game_state[1].get('running_total'), None)
+        self.assertEqual(game_state[2].get('running_total'), 3)
+        self.assertEqual(game_state[3].get('running_total'), 12)
         # This frame score is effectively zero until there is enough frame data.
-        self.assertEqual(game_state[4].get('running_total'), 30)
+        self.assertEqual(game_state[4].get('running_total'), 12)
         self.assertEqual(len(game_state), 5)
 
 
@@ -350,13 +349,18 @@ class BowlingGameTestCase(unittest.TestCase):
         self.assertNotEqual(inner_state, game_state)
 
 
-    def test_is_current_frame_complete(self):
+    def test_is_frame_complete(self):
         """It should indicate whether the current frame has ended."""
-        self.assertFalse(self.b.is_current_frame_complete())
         self.b.post_new_score(1)
-        self.assertFalse(self.b.is_current_frame_complete())
+        self.assertFalse(self.b.is_frame_complete(self.b.current_frame))
         self.b.post_new_score(2)
-        self.assertTrue(self.b.is_current_frame_complete())
+        self.assertTrue(self.b.is_frame_complete(self.b.current_frame))
+        self.b.post_new_score(10)
+        self.assertTrue(self.b.is_frame_complete(2))
+        self.b.post_new_score(2)
+        self.assertTrue(self.b.is_frame_complete(1))
+        self.assertTrue(self.b.is_frame_complete(2))
+        self.assertFalse(self.b.is_frame_complete(3))
 
 
     def test_is_game_over(self):

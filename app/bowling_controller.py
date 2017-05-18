@@ -173,7 +173,8 @@ class BowlingController(object):
         games[player].post_new_score(score)
 
         # Switch to the next player if the frame is complete.
-        if games[player].is_current_frame_complete():
+        i = games[player].current_frame
+        if games[player].is_frame_complete(i):
             num_players = self.__num_players
             self.__player_turn = (player + 1) % num_players
 
