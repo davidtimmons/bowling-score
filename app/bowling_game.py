@@ -37,8 +37,8 @@ class BowlingGame(object):
             num_frames: Integer representing the number of frames in this game.
             game_state: List that stores frame dictionary objects as the game progresses.
         """
-        self.__num_pins = num_pins
-        self.__num_frames = num_frames
+        self.__num_pins = num_pins if num_pins >= 1 else 1
+        self.__num_frames = num_frames if num_frames >= 1 else 1
         self.__game_state = game_state
 
 
@@ -323,7 +323,7 @@ class BowlingGame(object):
         if len(game) < self.NUM_FRAMES:
             return False ## The game is not in the last frame.
 
-        prev_frame = game[-2]
+        prev_frame = game[-2] if len(game) >= 2 else {}
         frame = game[-1]
         frame_count = len(game)
 

@@ -23,7 +23,7 @@ class BowlingController(object):
             num_frames: Integer representing the number of frames in this game.
             game_states: List that stores one BowlingGame objects for each player.
         """
-        self.__num_players = num_players
+        self.__num_players = num_players if num_players >= 1 else 1
         self.__num_pins = num_pins
         self.__num_frames = num_frames
 
@@ -34,6 +34,12 @@ class BowlingController(object):
 
         self.__game_states = game_states
         self.__player_turn = 0 ## A pointer to the current player's bowling game object.
+
+
+    @read_only
+    def NUM_PLAYERS(self):
+        """Returns the total number of players in this bowling game."""
+        return self.__num_players
 
 
     ########################
@@ -49,7 +55,7 @@ class BowlingController(object):
         return self.__player_turn + 1
 
 
-    @restrict_bounds(1, lambda self: self.__num_players)
+    @restrict_bounds(1, lambda self: self.NUM_PLAYERS)
     def get_current_score(self, player):
         """Returns the current score for this player.
 
@@ -73,7 +79,7 @@ class BowlingController(object):
         """
         data = []
         games = self.__game_states
-        for p in range(self.__num_players):
+        for p in range(self.NUM_PLAYERS):
             frame = games[p].current_frame
             data.append(games[p].get_frame_data(frame).get('running_total'))
         return data
@@ -91,7 +97,7 @@ class BowlingController(object):
         Returns:
             Dictionary containing data from the ith frame.
         """
-        if player < 1 or player > self.__num_players:
+        if player < 1 or player > self.NUM_PLAYERS:
             return {}
 
         games = self.__game_states
@@ -112,12 +118,12 @@ class BowlingController(object):
         """
         data = []
         games = self.__game_states
-        for p in range(self.__num_players):
+        for p in range(self.NUM_PLAYERS):
             data.append(games[p].get_frame_data(i))
         return data
 
 
-    @restrict_bounds(1, lambda self: self.__num_players)
+    @restrict_bounds(1, lambda self: self.NUM_PLAYERS)
     def get_game_state(self, player):
         """Returns a full, recursive copy of the game state for this player.
 
@@ -140,12 +146,12 @@ class BowlingController(object):
         """
         data = []
         games = self.__game_states
-        for p in range(self.__num_players):
+        for p in range(self.NUM_PLAYERS):
             data.append(games[p].get_game_state())
         return data
 
 
-    @restrict_bounds(1, lambda self: self.__num_players)
+    @restrict_bounds(1, lambda self: self.NUM_PLAYERS)
     def is_game_over(self, player):
         """Determine whether the game is over for this player.
 
@@ -160,7 +166,6 @@ class BowlingController(object):
         return games[player].is_game_over()
 
 
-    @restrict_bounds(0, lambda self: self.__num_pins)
     def post_new_score(self, score):
         """Add a new ball score, update scores for the current player, then switch to next player.
 
@@ -175,8 +180,7 @@ class BowlingController(object):
         # Switch to the next player if the frame is complete.
         i = games[player].current_frame
         if games[player].is_frame_complete(i):
-            num_players = self.__num_players
-            self.__player_turn = (player + 1) % num_players
+            self.__player_turn = (player + 1) % self.NUM_PLAYERS
 
 
 if __name__ == '__main__':
